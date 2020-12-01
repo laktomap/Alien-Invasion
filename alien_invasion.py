@@ -37,7 +37,7 @@ class AlienInvasion:
         self._create_fleet()
 
         # Make the play button.
-        self.play_button = Button(self, "Play")
+        self.play_button = Button(self, "press any key")
 
     def run_game(self):
         """Start the main loop for the game."""
@@ -56,34 +56,41 @@ class AlienInvasion:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
-            elif event.type == pygame.KEYDOWN:
+            elif event.type == pygame.KEYDOWN and self.stats.game_active:
                 self._check_keydown_events(event)
             elif event.type == pygame.KEYUP:
                 self._check_keyup_events(event)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = pygame.mouse.get_pos()
                 self._check_play_button(mouse_pos)
+            elif event.type == pygame.KEYDOWN and not self.stats.game_active:
+                self._reset_game()
+
 
     def _check_play_button(self, mouse_pos):
         """Start a new game when the player clicks Play."""
         button_clicked = self.play_button.rect.collidepoint(mouse_pos)
         if button_clicked and not self.stats.game_active:
+            self._reset_game()
 
-            # Reset the game settings.
-            self.settings.initialize_dynamic_settings()
-            self.stats.reset_stats()
-            self.stats.game_active = True
+    def _reset_game(self):
+        """Resets the game"""
 
-            # Get rid of remaining aliens and bullets.
-            self.aliens.empty()
-            self.bullets.empty()
+        # Reset the game settings.
+        self.settings.initialize_dynamic_settings()
+        self.stats.reset_stats()
+        self.stats.game_active = True
 
-            # Create a new fleet and center the ship.
-            self._create_fleet()
-            self.ship.center_ship()
+        # Get rid of remaining aliens and bullets.
+        self.aliens.empty()
+        self.bullets.empty()
 
-            # Hide the mouse cursor.
-            pygame.mouse.set_visible(False)
+        # Create a new fleet and center the ship.
+        self._create_fleet()
+        self.ship.center_ship()
+
+        # Hide the mouse cursor.
+        pygame.mouse.set_visible(False)
 
 
     def _check_keydown_events(self, event):
