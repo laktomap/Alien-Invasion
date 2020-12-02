@@ -86,6 +86,7 @@ class AlienInvasion:
         self.settings.initialize_dynamic_settings()
         self.stats.reset_stats()
         self.stats.game_active = True
+        self.sb.prep_score()
 
         # Get rid of remaining aliens and bullets.
         self.aliens.empty()
@@ -144,6 +145,10 @@ class AlienInvasion:
         # Spiele einen sound, wenn ein Alien getroffen wurde
         if collisions:
             self.sound_rip_alien.play()
+            for aliens in collisions.values():
+                self.stats.score += self.settings.alien_points * len(aliens)
+            self.sb.prep_score()
+
         if not self.aliens:
             # Destroy existing bullets and create new fleet.
             self.bullets.empty()
