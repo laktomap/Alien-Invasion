@@ -39,6 +39,12 @@ class AlienInvasion:
         # Make the play button.
         self.play_button = Button(self, "press any key")
 
+        # Import all the sounds
+        self.sound_shot = pygame.mixer.Sound('sounds/shot.wav')
+        self.sound_rip_alien = pygame.mixer.Sound('sounds/rip_alien.wav')
+        self.sound_rip_player = pygame.mixer.Sound('sounds/rip_player.wav')
+
+
     def run_game(self):
         """Start the main loop for the game."""
         while True:
@@ -112,10 +118,11 @@ class AlienInvasion:
             self.ship.moving_left = False
 
     def _fire_bullet(self):
-        """Create a new bullet and add it to the bullets group."""
+        """Create a new bullet and add it to the bullets group. Play a sound"""
         if len(self.bullets) < self.settings.bullets_allowed:
             new_bullet = Bullet(self)
             self.bullets.add(new_bullet)
+            self.sound_shot.play()
 
     def _update_bullets(self):
         """Update position of bullets and get rid of old bullets."""
@@ -134,7 +141,9 @@ class AlienInvasion:
         # Remove any bullets and aliens that have collided.
         collisions = pygame.sprite.groupcollide(
                 self.bullets, self.aliens, True, True)
-
+        # Spiele einen sound, wenn ein Alien getroffen wurde
+        if collisions:
+            self.sound_rip_alien.play()
         if not self.aliens:
             # Destroy existing bullets and create new fleet.
             self.bullets.empty()
@@ -167,6 +176,7 @@ class AlienInvasion:
 
     def _ship_hit(self):
         """Respond to the ship being hit by an alien."""
+        self.sound_rip_player.play()
         if self.stats.ships_left > 1:
             # Decrement ships_left.
             self.stats.ships_left -= 1
@@ -180,7 +190,7 @@ class AlienInvasion:
             self.ship.center_ship()
             
             # Pause.
-            sleep(0.5)
+            sleep(0.8)
         else:
             self.stats.game_active = False
             pygame.mouse.set_visible(True)
