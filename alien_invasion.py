@@ -39,6 +39,12 @@ class AlienInvasion:
         # Make the play button.
         self.play_button = Button(self, "press any key")
 
+        # Import all the sounds
+        self.sound_shot = pygame.mixer.Sound('sounds/shot.wav')
+        self.sound_rip_alien = pygame.mixer.Sound('sounds/rip_alien.wav')
+        self.sound_rip_player = pygame.mixer.Sound('sounds/rip_player.wav')
+
+
     def run_game(self):
         """Start the main loop for the game."""
         while True:
@@ -64,7 +70,11 @@ class AlienInvasion:
                 mouse_pos = pygame.mouse.get_pos()
                 self._check_play_button(mouse_pos)
             elif event.type == pygame.KEYDOWN and not self.stats.game_active:
-                self._reset_game()
+                if event.key == pygame.K_q:
+                    self._update_high_score_file()
+                    sys.exit()
+                else:
+                    self._reset_game()
 
 
     def _check_play_button(self, mouse_pos):
@@ -80,6 +90,9 @@ class AlienInvasion:
         self.settings.initialize_dynamic_settings()
         self.stats.reset_stats()
         self.stats.game_active = True
+        self.sb.prep_score()
+        self.sb.prep_level()
+        self.sb.prep_ships()
 
         # Get rid of remaining aliens and bullets.
         self.aliens.empty()
@@ -100,6 +113,7 @@ class AlienInvasion:
         elif event.key == pygame.K_LEFT:
             self.ship.moving_left = True
         elif event.key == pygame.K_q:
+            self._update_high_score_file()
             sys.exit()
         elif event.key == pygame.K_SPACE:
             self._fire_bullet()
@@ -112,10 +126,11 @@ class AlienInvasion:
             self.ship.moving_left = False
 
     def _fire_bullet(self):
-        """Create a new bullet and add it to the bullets group."""
+        """Create a new bullet and add it to the bullets group. Play a sound"""
         if len(self.bullets) < self.settings.bullets_allowed:
             new_bullet = Bullet(self)
             self.bullets.add(new_bullet)
+            self.sound_shot.play()
 
     def _update_bullets(self):
         """Update position of bullets and get rid of old bullets."""
@@ -134,11 +149,22 @@ class AlienInvasion:
         # Remove any bullets and aliens that have collided.
         collisions = pygame.sprite.groupcollide(
                 self.bullets, self.aliens, True, True)
+        # Spiele einen sound, wenn ein Alien getroffen wurde
+        if collisions:
+            self.sound_rip_alien.play()
+            for aliens in collisions.values():
+                self.stats.score += self.settings.alien_points * len(aliens)
+            self.sb.prep_score()
+            self.sb.check_high_score()
 
         if not self.aliens:
             # Destroy existing bullets and create new fleet.
             self.bullets.empty()
             self._create_fleet()
+            
+            # Increase level.
+            self.stats.level += 1
+            self.sb.prep_level()
             self.settings.increase_speed()
 
     def _update_aliens(self):
@@ -167,9 +193,11 @@ class AlienInvasion:
 
     def _ship_hit(self):
         """Respond to the ship being hit by an alien."""
+        self.sound_rip_player.play()
         if self.stats.ships_left > 1:
-            # Decrement ships_left.
+            # Decrement ships_left and update scoreboard.
             self.stats.ships_left -= 1
+            self.sb.prep_ships()
             
             # Get rid of any remaining aliens and bullets.
             self.aliens.empty()
@@ -180,10 +208,17 @@ class AlienInvasion:
             self.ship.center_ship()
             
             # Pause.
-            sleep(0.5)
+            sleep(0.8)
         else:
             self.stats.game_active = False
             pygame.mouse.set_visible(True)
+            self._update_high_score_file()
+
+    def _update_high_score_file(self):
+        """Updates the high score file with the current high score"""
+        high_score_file = open("high_score.txt", "w")
+        high_score_file.write(str(self.stats.high_score))
+        high_score_file.close()
 
     def _create_fleet(self):
         """Create the fleet of aliens."""
