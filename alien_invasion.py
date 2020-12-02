@@ -148,6 +148,7 @@ class AlienInvasion:
             for aliens in collisions.values():
                 self.stats.score += self.settings.alien_points * len(aliens)
             self.sb.prep_score()
+            self.sb.check_high_score()
 
         if not self.aliens:
             # Destroy existing bullets and create new fleet.
@@ -199,6 +200,9 @@ class AlienInvasion:
         else:
             self.stats.game_active = False
             pygame.mouse.set_visible(True)
+            high_score_file = open("high_score.txt", "w")
+            high_score_file.write(str(self.stats.high_score))
+            high_score_file.close()
 
     def _create_fleet(self):
         """Create the fleet of aliens."""
