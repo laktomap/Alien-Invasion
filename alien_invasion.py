@@ -70,7 +70,11 @@ class AlienInvasion:
                 mouse_pos = pygame.mouse.get_pos()
                 self._check_play_button(mouse_pos)
             elif event.type == pygame.KEYDOWN and not self.stats.game_active:
-                self._reset_game()
+                if event.key == pygame.K_q:
+                    self._update_high_score_file()
+                    sys.exit()
+                else:
+                    self._reset_game()
 
 
     def _check_play_button(self, mouse_pos):
@@ -87,6 +91,7 @@ class AlienInvasion:
         self.stats.reset_stats()
         self.stats.game_active = True
         self.sb.prep_score()
+        self.sb.prep_level()
 
         # Get rid of remaining aliens and bullets.
         self.aliens.empty()
@@ -107,6 +112,7 @@ class AlienInvasion:
         elif event.key == pygame.K_LEFT:
             self.ship.moving_left = True
         elif event.key == pygame.K_q:
+            self._update_high_score_file()
             sys.exit()
         elif event.key == pygame.K_SPACE:
             self._fire_bullet()
@@ -154,6 +160,10 @@ class AlienInvasion:
             # Destroy existing bullets and create new fleet.
             self.bullets.empty()
             self._create_fleet()
+            
+            # Increase level.
+            self.stats.level += 1
+            self.sb.prep_level()
             self.settings.increase_speed()
 
     def _update_aliens(self):
@@ -200,9 +210,13 @@ class AlienInvasion:
         else:
             self.stats.game_active = False
             pygame.mouse.set_visible(True)
-            high_score_file = open("high_score.txt", "w")
-            high_score_file.write(str(self.stats.high_score))
-            high_score_file.close()
+            self._update_high_score_file()
+
+    def _update_high_score_file(self):
+        """Updates the high score file with the current high score"""
+        high_score_file = open("high_score.txt", "w")
+        high_score_file.write(str(self.stats.high_score))
+        high_score_file.close()
 
     def _create_fleet(self):
         """Create the fleet of aliens."""
